@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  cvProfiles    CVProfile[]
+  optimizations Optimization[]
+  coverLetters  CoverLetter[]
+}
+
+model CVProfile {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  originalText  String
+  fileName      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  optimizations Optimization[]
+}
+
+model JobPosting {
+  id              String   @id @default(cuid())
+  title           String
+  company         String?
+  description     String
+
+  // Extracted data from LLM analysis
+  requiredSkills  String   // JSON array
+  preferredSkills String   // JSON array
+  keywords        String   // JSON array
+  experienceLevel String?
+  industry        String?
+
+  createdAt       DateTime @default(now())
+
+  optimizations   Optimization[]
+  coverLetters    CoverLetter[]
+}
+
+model Optimization {
+  id              String     @id @default(cuid())
+  userId          String?
+  user            User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  cvProfileId     String?
+  cvProfile       CVProfile? @relation(fields: [cvProfileId], references: [id], onDelete: SetNull)
+
+  jobPostingId    String
+  jobPosting      JobPosting @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+
+  originalCV      String
+  optimizedCV     String
+
+  // Analysis results
+  atsScoreBefore  Int
+  atsScoreAfter   Int
+  matchedKeywords String     // JSON array
+  addedKeywords   String     // JSON array
+  missingSkills   String     // JSON array
+  improvements    String     // JSON array
+
+  // Position adaptation
+  targetRole      String?
+  roleAdaptations String?    // JSON - how CV was adapted for target role
+
+  createdAt       DateTime   @default(now())
+}
+
+model CoverLetter {
+  id            String     @id @default(cuid())
+  userId        String?
+  user          User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  jobPostingId  String
+  jobPosting    JobPosting @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+
+  content       String
+  tone          String     @default("professional") // professional, enthusiastic, formal
+
+  createdAt     DateTime   @default(now())
+}
+
+model SkillGap {
+  id              String   @id @default(cuid())
+
+  missingSkill    String
+  category        String   // technical, soft, certification
+  importance      String   // critical, important, nice-to-have
+
+  // Learning resources
+  learningPath    String?  // JSON - suggested courses, resources
+  estimatedTime   String?  // e.g., "2-4 weeks"
+
+  createdAt       DateTime @default(now())
+}
+
+// ============================================
+// AI INTERVIEW SIMULATION
+// ============================================
+
+model InterviewSession {
+  id              String    @id @default(cuid())
+
+  cvText          String
+  jobDescription  String
+  targetRole      String
+
+  status          String    @default("in_progress") // in_progress, completed
+  totalQuestions  Int       @default(5)
+  currentQuestion Int       @default(0)
+  overallScore    Float?
+
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+
+  questions       InterviewQuestion[]
+}
+
+model InterviewQuestion {
+  id              String    @id @default(cuid())
+
+  sessionId       String
+  session         InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  questionNumber  Int
+  questionType    String    // technical, behavioral, situational, competency
+  question        String
+  expectedTopics  String    // JSON array of expected topics
+  difficulty      String    // easy, medium, hard
+
+  // User's answer and evaluation
+  userAnswer      String?
+  score           Float?    // 0-100
+  feedback        String?
+  strengths       String?   // JSON array
+  improvements    String?   // JSON array
+  sampleAnswer    String?
+
+  answeredAt      DateTime?
+}
+
+// ============================================
+// LINKEDIN PROFILE INTEGRATION
+// ============================================
+
+model LinkedInProfile {
+  id              String    @id @default(cuid())
+  userId          String?
+
+  fullName        String
+  headline        String?
+  location        String?
+  summary         String?
+
+  experience      String    // JSON array
+  education       String    // JSON array
+  skills          String    // JSON array
+  certifications  String?   // JSON array
+  languages       String?   // JSON array
+
+  sourceType      String    @default("pdf") // pdf, manual
+  originalText    String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
