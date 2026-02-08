@@ -37,13 +37,13 @@ Font.registerHyphenationCallback((word) => [word]);
 
 // Professional CV Color Palette
 const colors = {
-  primary: "#1a1a1a",      // Almost black - headings
-  secondary: "#4a4a4a",    // Dark gray - body text
-  accent: "#2563eb",       // Blue - links, highlights
-  muted: "#6b7280",        // Gray - dates, secondary info
-  border: "#e5e7eb",       // Light gray - dividers
-  background: "#ffffff",   // White
-  sectionBg: "#f8fafc",    // Very light gray - section backgrounds
+  primary: "#1a1a1a", // Almost black - headings
+  secondary: "#4a4a4a", // Dark gray - body text
+  accent: "#2563eb", // Blue - links, highlights
+  muted: "#6b7280", // Gray - dates, secondary info
+  border: "#e5e7eb", // Light gray - dividers
+  background: "#ffffff", // White
+  sectionBg: "#f8fafc", // Very light gray - section backgrounds
 };
 
 const styles = StyleSheet.create({
@@ -237,7 +237,15 @@ interface PDFDownloadButtonProps {
 }
 
 interface CVSection {
-  type: "summary" | "experience" | "education" | "skills" | "certifications" | "projects" | "languages" | "other";
+  type:
+    | "summary"
+    | "experience"
+    | "education"
+    | "skills"
+    | "certifications"
+    | "projects"
+    | "languages"
+    | "other";
   title: string;
   content: string[];
   entries?: {
@@ -254,17 +262,37 @@ function parseCV(content: string): CVSection[] {
   const sections: CVSection[] = [];
 
   const sectionPatterns: { pattern: RegExp; type: CVSection["type"] }[] = [
-    { pattern: /^(ÖZET|SUMMARY|PROFİL|PROFILE|HAKKIMDA|ABOUT)/i, type: "summary" },
-    { pattern: /^(DENEYİM|EXPERIENCE|İŞ DENEYİMİ|WORK EXPERIENCE|ÇALIŞMA GEÇMİŞİ)/i, type: "experience" },
+    {
+      pattern: /^(ÖZET|SUMMARY|PROFİL|PROFILE|HAKKIMDA|ABOUT)/i,
+      type: "summary",
+    },
+    {
+      pattern:
+        /^(DENEYİM|EXPERIENCE|İŞ DENEYİMİ|WORK EXPERIENCE|ÇALIŞMA GEÇMİŞİ)/i,
+      type: "experience",
+    },
     { pattern: /^(EĞİTİM|EDUCATION|AKADEMİK|ACADEMIC)/i, type: "education" },
-    { pattern: /^(BECERİLER|SKILLS|TEKNİK BECERİLER|TECHNICAL SKILLS|YETKİNLİKLER)/i, type: "skills" },
-    { pattern: /^(SERTİFİKALAR|CERTIFICATIONS|SERTİFİKA)/i, type: "certifications" },
+    {
+      pattern:
+        /^(BECERİLER|SKILLS|TEKNİK BECERİLER|TECHNICAL SKILLS|YETKİNLİKLER)/i,
+      type: "skills",
+    },
+    {
+      pattern: /^(SERTİFİKALAR|CERTIFICATIONS|SERTİFİKA)/i,
+      type: "certifications",
+    },
     { pattern: /^(PROJELER|PROJECTS|PROJE)/i, type: "projects" },
     { pattern: /^(DİLLER|LANGUAGES|YABANCI DİL)/i, type: "languages" },
   ];
 
   let currentSection: CVSection | null = null;
-  let currentEntry: CVSection["entries"] extends (infer T)[] ? T : never | null = null;
+  let currentEntry: {
+    title: string;
+    subtitle?: string;
+    date?: string;
+    description?: string;
+    bullets?: string[];
+  } | null = null;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -292,25 +320,39 @@ function parseCV(content: string): CVSection[] {
         type: matchedType,
         title: line.replace(":", "").trim(),
         content: [],
-        entries: matchedType !== "summary" && matchedType !== "skills" && matchedType !== "languages" ? [] : undefined,
+        entries:
+          matchedType !== "summary" &&
+          matchedType !== "skills" &&
+          matchedType !== "languages"
+            ? []
+            : undefined,
       };
       currentEntry = null;
     } else if (currentSection) {
       // Check if this looks like an entry title (for experience/education)
-      const isEntryTitle = currentSection.entries !== undefined &&
+      const isEntryTitle =
+        currentSection.entries !== undefined &&
         !line.startsWith("-") &&
         !line.startsWith("•") &&
         line.length > 0 &&
-        (line.includes("|") || /\d{4}/.test(line) || /^\s*[A-ZÇĞİÖŞÜ]/.test(line));
+        (line.includes("|") ||
+          /\d{4}/.test(line) ||
+          /^\s*[A-ZÇĞİÖŞÜ]/.test(line));
 
-      if (isEntryTitle && currentSection.type !== "summary" && currentSection.type !== "skills") {
+      if (
+        isEntryTitle &&
+        currentSection.type !== "summary" &&
+        currentSection.type !== "skills"
+      ) {
         // Save previous entry
         if (currentEntry && currentSection.entries) {
           currentSection.entries.push(currentEntry);
         }
 
         // Parse entry with potential date
-        const dateMatch = line.match(/(\d{4}\s*[-–]\s*(?:\d{4}|Günümüz|Devam|Present|Halen)|\d{4})/i);
+        const dateMatch = line.match(
+          /(\d{4}\s*[-–]\s*(?:\d{4}|Günümüz|Devam|Present|Halen)|\d{4})/i,
+        );
         const parts = line.split(/\s*[|]\s*/);
 
         currentEntry = {
@@ -363,14 +405,22 @@ function CVDocument({ content, targetRole, userName }: PDFDownloadButtonProps) {
   const sections = parseCV(content);
 
   // Extract name from first line if not provided
-  const displayName = userName || sections[0]?.content?.[0] || targetRole || "CV";
+  const displayName =
+    userName || sections[0]?.content?.[0] || targetRole || "CV";
 
   // Separate sections for two-column layout
-  const mainSections = sections.filter(s =>
-    s.type === "summary" || s.type === "experience" || s.type === "education" || s.type === "projects"
+  const mainSections = sections.filter(
+    (s) =>
+      s.type === "summary" ||
+      s.type === "experience" ||
+      s.type === "education" ||
+      s.type === "projects",
   );
-  const sideSections = sections.filter(s =>
-    s.type === "skills" || s.type === "certifications" || s.type === "languages"
+  const sideSections = sections.filter(
+    (s) =>
+      s.type === "skills" ||
+      s.type === "certifications" ||
+      s.type === "languages",
   );
 
   return (
@@ -416,7 +466,9 @@ function CVDocument({ content, targetRole, userName }: PDFDownloadButtonProps) {
                       <Text style={styles.entrySubtitle}>{entry.subtitle}</Text>
                     )}
                     {entry.description && (
-                      <Text style={styles.entryDescription}>{entry.description}</Text>
+                      <Text style={styles.entryDescription}>
+                        {entry.description}
+                      </Text>
                     )}
                     {entry.bullets && entry.bullets.length > 0 && (
                       <View style={styles.bulletList}>
@@ -432,16 +484,18 @@ function CVDocument({ content, targetRole, userName }: PDFDownloadButtonProps) {
                 ))}
 
                 {/* Content without entries */}
-                {!section.entries && section.type !== "summary" && section.content.length > 0 && (
-                  <View style={styles.bulletList}>
-                    {section.content.map((item, itemIdx) => (
-                      <View key={itemIdx} style={styles.bulletItem}>
-                        <Text style={styles.bulletDot}>•</Text>
-                        <Text style={styles.bulletText}>{item}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
+                {!section.entries &&
+                  section.type !== "summary" &&
+                  section.content.length > 0 && (
+                    <View style={styles.bulletList}>
+                      {section.content.map((item, itemIdx) => (
+                        <View key={itemIdx} style={styles.bulletItem}>
+                          <Text style={styles.bulletDot}>•</Text>
+                          <Text style={styles.bulletText}>{item}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
               </View>
             ))}
           </View>
@@ -469,8 +523,7 @@ function CVDocument({ content, targetRole, userName }: PDFDownloadButtonProps) {
                         <Text key={itemIdx} style={styles.textContent}>
                           {item.startsWith("-") || item.startsWith("•")
                             ? item.replace(/^[-•]\s*/, "• ")
-                            : item
-                          }
+                            : item}
                         </Text>
                       ))}
                     </View>
@@ -484,18 +537,25 @@ function CVDocument({ content, targetRole, userName }: PDFDownloadButtonProps) {
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            {new Date().toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+            {new Date().toLocaleDateString("tr-TR", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
           </Text>
-          <Text style={styles.footerText}>
-            CV Optimizer ile oluşturuldu
-          </Text>
+          <Text style={styles.footerText}>CV Optimizer ile oluşturuldu</Text>
         </View>
       </Page>
     </Document>
   );
 }
 
-export default function PDFDownloadButton({ content, targetRole, atsScore, userName }: PDFDownloadButtonProps) {
+export default function PDFDownloadButton({
+  content,
+  targetRole,
+  atsScore,
+  userName,
+}: PDFDownloadButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleDownload = async () => {
@@ -508,7 +568,7 @@ export default function PDFDownloadButton({ content, targetRole, atsScore, userN
           targetRole={targetRole}
           atsScore={atsScore}
           userName={userName}
-        />
+        />,
       ).toBlob();
 
       const url = URL.createObjectURL(blob);
