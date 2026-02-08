@@ -94,7 +94,6 @@ Lütfen bu CV'yi yukarıdaki iş ilanına göre optimize et.
     system: CV_OPTIMIZER_SYSTEM_PROMPT,
     prompt: userPrompt,
     temperature: 0.3,
-    maxTokens: 16384,
   });
 
   return object;
