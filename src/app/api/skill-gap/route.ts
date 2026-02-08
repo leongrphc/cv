@@ -19,12 +19,18 @@ export async function POST(request: NextRequest) {
     // Save skill gaps to database
     try {
       if (result.gaps && Array.isArray(result.gaps)) {
-        const skillGapRecords = result.gaps.map((gap: { skill: string; category: string; importance: string; learningPath?: string[]; estimatedTime?: string }) => ({
+        const skillGapRecords = result.gaps.map((gap: { 
+          skill: string; 
+          category: string; 
+          importance: string; 
+          learningPath?: { resources: string[]; courses: string[]; certifications: string[]; estimatedTime: string }; 
+          workaround?: string;
+        }) => ({
           missingSkill: gap.skill || "Bilinmeyen Beceri",
           category: gap.category || "technical",
           importance: gap.importance || "important",
           learningPath: gap.learningPath ? JSON.stringify(gap.learningPath) : null,
-          estimatedTime: gap.estimatedTime || null,
+          estimatedTime: gap.learningPath?.estimatedTime || null,
         }));
 
         await prisma.skillGap.createMany({
