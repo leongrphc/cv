@@ -41,8 +41,12 @@ function getProvider(): LLMProvider {
 const cvOptimizationSchema = z.object({
   optimizedCV: z.string().describe("The full text of the optimized CV"),
   targetRole: z.string().describe("The target position title"),
-  improvements: z.array(z.string()).describe("List of 3-5 key improvements made"),
-  roleAdaptations: z.array(z.string()).describe("2-3 ways CV was adapted for the target role"),
+  improvements: z
+    .array(z.string())
+    .describe("List of 3-5 key improvements made"),
+  roleAdaptations: z
+    .array(z.string())
+    .describe("2-3 ways CV was adapted for the target role"),
   keywords: z.object({
     matched: z.array(z.string()).describe("5-8 matched keywords"),
     added: z.array(z.string()).describe("5-8 added keywords"),
@@ -52,13 +56,15 @@ const cvOptimizationSchema = z.object({
     before: z.number(),
     after: z.number(),
   }),
-  skillGaps: z.array(
-    z.object({
-      skill: z.string(),
-      importance: z.enum(["critical", "important", "nice-to-have"]),
-      suggestion: z.string().describe("Brief suggestion, max 100 chars"),
-    })
-  ).describe("Top 3-5 skill gaps"),
+  skillGaps: z
+    .array(
+      z.object({
+        skill: z.string(),
+        importance: z.enum(["critical", "important", "nice-to-have"]),
+        suggestion: z.string().describe("Brief suggestion, max 100 chars"),
+      }),
+    )
+    .describe("Top 3-5 skill gaps"),
 });
 
 export type CVOptimizationResult = z.infer<typeof cvOptimizationSchema>;
@@ -66,7 +72,7 @@ export type CVOptimizationResult = z.infer<typeof cvOptimizationSchema>;
 export async function optimizeCV(
   cvText: string,
   jobDescription: string,
-  targetRole?: string
+  targetRole?: string,
 ): Promise<CVOptimizationResult> {
   const provider = getProvider();
   const model = getModel(provider);
@@ -120,7 +126,7 @@ const jobAnalysisSchema = z.object({
 export type JobAnalysisResult = z.infer<typeof jobAnalysisSchema>;
 
 export async function analyzeJob(
-  jobDescription: string
+  jobDescription: string,
 ): Promise<JobAnalysisResult> {
   const provider = getProvider();
   const model = getModel(provider);
@@ -151,7 +157,7 @@ export type CoverLetterResult = z.infer<typeof coverLetterSchema>;
 export async function generateCoverLetter(
   cvText: string,
   jobDescription: string,
-  tone: "professional" | "enthusiastic" | "formal" = "professional"
+  tone: "professional" | "enthusiastic" | "formal" = "professional",
 ): Promise<CoverLetterResult> {
   const provider = getProvider();
   const model = getModel(provider);
@@ -195,7 +201,7 @@ const skillGapSchema = z.object({
         estimatedTime: z.string(),
       }),
       workaround: z.string(),
-    })
+    }),
   ),
   overallReadiness: z.number(),
   strongPoints: z.array(z.string()),
@@ -206,7 +212,7 @@ export type SkillGapResult = z.infer<typeof skillGapSchema>;
 
 export async function analyzeSkillGaps(
   cvText: string,
-  jobDescription: string
+  jobDescription: string,
 ): Promise<SkillGapResult> {
   const provider = getProvider();
   const model = getModel(provider);
@@ -244,7 +250,7 @@ const jobComparisonSchema = z.object({
       gaps: z.array(z.string()),
       effort: z.enum(["low", "medium", "high"]),
       recommendation: z.string(),
-    })
+    }),
   ),
   bestMatch: z.string(),
   overallStrategy: z.string(),
@@ -254,7 +260,7 @@ export type JobComparisonResult = z.infer<typeof jobComparisonSchema>;
 
 export async function compareJobs(
   cvText: string,
-  jobs: { id: string; description: string }[]
+  jobs: { id: string; description: string }[],
 ): Promise<JobComparisonResult> {
   const provider = getProvider();
   const model = getModel(provider);
@@ -289,11 +295,16 @@ const interviewQuestionsSchema = z.object({
   questions: z.array(
     z.object({
       questionNumber: z.number(),
-      questionType: z.enum(["technical", "behavioral", "situational", "competency"]),
+      questionType: z.enum([
+        "technical",
+        "behavioral",
+        "situational",
+        "competency",
+      ]),
       question: z.string(),
       expectedTopics: z.array(z.string()),
       difficulty: z.enum(["easy", "medium", "hard"]),
-    })
+    }),
   ),
   targetRole: z.string(),
 });
@@ -304,7 +315,7 @@ export async function generateInterviewQuestions(
   cvText: string,
   jobDescription: string,
   targetRole?: string,
-  questionCount: number = 5
+  questionCount: number = 5,
 ): Promise<InterviewQuestionsResult> {
   const provider = getProvider();
   const model = getModel(provider);
@@ -337,14 +348,16 @@ const interviewEvaluationSchema = z.object({
   sampleAnswer: z.string(),
 });
 
-export type InterviewEvaluationResult = z.infer<typeof interviewEvaluationSchema>;
+export type InterviewEvaluationResult = z.infer<
+  typeof interviewEvaluationSchema
+>;
 
 export async function evaluateInterviewAnswer(
   question: string,
   expectedTopics: string[],
   answer: string,
   cvText: string,
-  jobDescription: string
+  jobDescription: string,
 ): Promise<InterviewEvaluationResult> {
   const provider = getProvider();
   const model = getModel(provider);
@@ -394,7 +407,7 @@ const linkedInProfileSchema = z.object({
       endDate: z.string().optional(),
       current: z.boolean(),
       description: z.string().optional(),
-    })
+    }),
   ),
   education: z.array(
     z.object({
@@ -404,31 +417,41 @@ const linkedInProfileSchema = z.object({
       startDate: z.string().optional(),
       endDate: z.string().optional(),
       description: z.string().optional(),
-    })
+    }),
   ),
   skills: z.array(z.string()),
-  certifications: z.array(
-    z.object({
-      name: z.string(),
-      issuer: z.string(),
-      issueDate: z.string().optional(),
-      expiryDate: z.string().optional(),
-      credentialId: z.string().optional(),
-    })
-  ).optional(),
-  languages: z.array(
-    z.object({
-      language: z.string(),
-      proficiency: z.enum(["elementary", "limited", "professional", "full", "native"]),
-    })
-  ).optional(),
+  certifications: z
+    .array(
+      z.object({
+        name: z.string(),
+        issuer: z.string(),
+        issueDate: z.string().optional(),
+        expiryDate: z.string().optional(),
+        credentialId: z.string().optional(),
+      }),
+    )
+    .optional(),
+  languages: z
+    .array(
+      z.object({
+        language: z.string(),
+        proficiency: z.enum([
+          "elementary",
+          "limited",
+          "professional",
+          "full",
+          "native",
+        ]),
+      }),
+    )
+    .optional(),
   extractedSections: z.array(z.string()),
 });
 
 export type LinkedInProfileResult = z.infer<typeof linkedInProfileSchema>;
 
 export async function parseLinkedInProfile(
-  pdfText: string
+  pdfText: string,
 ): Promise<LinkedInProfileResult> {
   const provider = getProvider();
   const model = getModel(provider);
@@ -458,7 +481,7 @@ const linkedInMergeSchema = z.object({
       cvValue: z.string(),
       linkedInValue: z.string(),
       resolution: z.string(),
-    })
+    }),
   ),
 });
 
@@ -467,7 +490,7 @@ export type LinkedInMergeResult = z.infer<typeof linkedInMergeSchema>;
 export async function mergeProfiles(
   cvText: string,
   linkedInProfile: LinkedInProfileResult,
-  priority: "cv" | "linkedin" | "balanced" = "balanced"
+  priority: "cv" | "linkedin" | "balanced" = "balanced",
 ): Promise<LinkedInMergeResult> {
   const provider = getProvider();
   const model = getModel(provider);
